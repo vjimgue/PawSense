@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+      - "8888:8888"
+    volumes: 
+      - ../:/app
+    environment:
+      - JUPYTER_TOKEN=grupo1
+      - TF_CPP_MIN_LOG_LEVEL=2
+    working_dir: /app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
