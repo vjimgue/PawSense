@@ -1,4 +1,6 @@
 .ipynb_checkpoints
 dataset_perros
 dataset_recortado
+dataset_*
 .Trash-0
+.venv
