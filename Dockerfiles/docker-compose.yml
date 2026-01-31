@@ -10,10 +10,13 @@ services:
       - JUPYTER_TOKEN=grupo1
       - TF_CPP_MIN_LOG_LEVEL=2
     working_dir: /app
+    # Enrique (no tiene gpu)
+    # shm_size: '2gb' # Aumentamos memoria compartida para que el modelo cargue mejor
+
     deploy:
       resources:
         reservations:
           devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+            driver: nvidia
+            count: all
+            capabilities: [gpu]
