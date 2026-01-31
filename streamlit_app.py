@@ -10,7 +10,7 @@ import os
 MODEL_PATH = "model/modelo_perros.pth"
 CLASS_NAMES_PATH = "model/class_names.json"
 
-st.set_page_config(page_title="Dog Breed Classifier", page_icon="🐶")
+st.set_page_config(page_title="PawSenses", page_icon="🐶")
 
 # --- Utils ---
 @st.cache_resource
@@ -66,8 +66,8 @@ def process_image(image):
     return transform(image).unsqueeze(0) # Add batch dimension
 
 # --- Main UI ---
-st.title("🐶 Dog Breed Classifier")
-st.write("Upload an image of a dog, and the model will predict its breed!")
+st.title("🐶 PawSense")
+st.write("Suve tu imagen de un perro y descubre su raza con nuestro clasificador.")
 
 class_names = load_class_names()
 
@@ -75,7 +75,7 @@ if class_names:
     model, device = load_model(len(class_names))
 
     if model:
-        uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+        uploaded_file = st.file_uploader("Elige una imagen de un perro...", type=["jpg", "jpeg", "png"])
         
         # Check if the user wants to use a default image for testing (optional, not requested but good for quick check)
         # But per plan, just file uploader.
@@ -85,10 +85,10 @@ if class_names:
             
             with col1:
                 image = Image.open(uploaded_file).convert('RGB')
-                st.image(image, caption='Uploaded Image', use_container_width=True)
+                st.image(image, caption='Imagen cargada', width="stretch")
 
             with col2:
-                st.write("Processing...")
+                st.write("Procesando...")
                 
                 input_tensor = process_image(image).to(device)
                 
@@ -99,7 +99,7 @@ if class_names:
                 # Get top 3 predictions
                 top3_prob, top3_idx = torch.topk(probabilities, 3)
                 
-                st.subheader("Predictions:")
+                st.subheader("Predicciones:")
                 for i in range(3):
                     prob = top3_prob[i].item()
                     idx = top3_idx[i].item()
