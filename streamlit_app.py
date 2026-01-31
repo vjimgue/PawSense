@@ -15,7 +15,7 @@ TF_MODEL_PATH = "model/modelo_prediccion_perros_v1.keras"
 CLASS_NAMES_PATH = "model/class_names.json"
 TRANSLATIONS_PATH = "model/breed_translations.json"
 
-st.set_page_config(page_title="PawSenses", page_icon="🐶", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="PawSense", page_icon="🐶", initial_sidebar_state="collapsed")
 
 # --- Utils ---
 @st.cache_resource
@@ -173,18 +173,37 @@ if class_names:
                 # Custom Centered Popup with Close Button and Timer
                 # Using a unique ID 'grand-winner-popup' to target with JS
                 # Note: We remove inline onclick as it might be stripped. We use a separate component to inject logic.
+                # Get names for popup
+                pytorch_winner_breed = translations.get(pytorch_winner_key, pytorch_winner_key.replace("_", " "))
+                tf_winner_breed = translations.get(tf_winner_key, tf_winner_key.replace("_", " "))
+
+                # Custom Centered Popup with Close Button and Timer
+                # Using a unique ID 'grand-winner-popup' to target with JS
+                # Note: We remove inline onclick as it might be stripped. We use a separate component to inject logic.
                 popup_html = f"""
-                <div id="grand-winner-popup" class="grand-winner-popup">
-                    <span id="popup-close-btn" class="popup-close-btn">&times;</span>
-                    <h1 style="color: #e67e22; margin-bottom: 10px;">🎉 ¡TENEMOS UN GANADOR! 🎉</h1>
-                    <h2 style="color: #2c3e50; font-size: 2.5rem; margin: 10px 0;">{grand_winner_name}</h2>
-                    <p style="color: #7f8c8d; font-size: 1.2rem;">Confianza: <strong>{grand_winner_prob*100:.2f}%</strong></p>
-                    <p style="color: #95a5a6; font-size: 0.9rem;">(Detectado por {grand_winner_source})</p>
-                    <div class="popup-progress-container">
-                        <div id="popup-progress-bar" class="popup-progress-bar"></div>
-                    </div>
-                </div>
-                """
+<div id="grand-winner-popup" class="grand-winner-popup">
+<span id="popup-close-btn" class="popup-close-btn">&times;</span>
+<h1 style="color: #e67e22; margin-bottom: 10px;">¡TENEMOS UN GANADOR! </h1>
+<h2 style="color: #2c3e50; font-size: 2.5rem; margin: 10px 0;">{grand_winner_name}</h2>
+<p style="color: #7f8c8d; font-size: 1.2rem;">Confianza Global: <strong>{grand_winner_prob*100:.2f}%</strong></p>
+<p style="color: #95a5a6; font-size: 0.9rem; margin-bottom: 20px;">(Mejor coincidencia: {grand_winner_source})</p>
+<div class="popup-columns">
+<div class="popup-col">
+<h3>PyTorch</h3>
+<p><strong>{pytorch_winner_breed}</strong></p>
+<p>{pytorch_winner_prob*100:.2f}%</p>
+</div>
+<div class="popup-col">
+<h3>TensorFlow</h3>
+<p><strong>{tf_winner_breed}</strong></p>
+<p>{tf_winner_prob*100:.2f}%</p>
+</div>
+</div>
+<div class="popup-progress-container">
+<div id="popup-progress-bar" class="popup-progress-bar"></div>
+</div>
+</div>
+"""
                 st.markdown(popup_html, unsafe_allow_html=True)
                 
                 # Inject JS via iframe to ensure execution and access to parent DOM

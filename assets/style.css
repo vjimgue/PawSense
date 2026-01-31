@@ -104,8 +104,37 @@ div[data-testid="stMetricValue"] {
     text-align: center;
     border: 3px solid #f1c40f;
     animation: popupFadeIn 0.8s ease-out;
-    max-width: 80%;
-    width: 400px;
+    max-width: 90%;
+    width: 700px;
+}
+
+.popup-columns {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    margin-top: 20px;
+    gap: 20px;
+}
+
+.popup-col {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    background: #fdfdfd;
+    border-radius: 10px;
+    border: 1px solid #eee;
+}
+
+.popup-col h3 {
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 1.2rem;
+}
+
+.popup-col p {
+    color: #7f8c8d;
+    margin: 0;
+    font-size: 1rem;
 }
 
 .popup-close-btn {
