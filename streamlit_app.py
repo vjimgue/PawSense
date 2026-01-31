@@ -9,6 +9,7 @@ import os
 # --- Configuration ---
 MODEL_PATH = "model/modelo_perros.pth"
 CLASS_NAMES_PATH = "model/class_names.json"
+TRANSLATIONS_PATH = "model/breed_translations.json"
 
 st.set_page_config(page_title="PawSenses", page_icon="🐶")
 
@@ -21,6 +22,17 @@ def load_class_names():
     with open(CLASS_NAMES_PATH, "r") as f:
         class_names = json.load(f)
     return class_names
+
+@st.cache_resource
+def load_translations():
+    if not os.path.exists(TRANSLATIONS_PATH):
+        return {}
+    with open(TRANSLATIONS_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def local_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 @st.cache_resource
 def load_model(num_classes):
@@ -67,9 +79,11 @@ def process_image(image):
 
 # --- Main UI ---
 st.title("🐶 PawSense")
-st.write("Suve tu imagen de un perro y descubre su raza con nuestro clasificador.")
+local_css("assets/style.css")
+st.write("Sube tu imagen de un perro y descubre su raza con nuestro clasificador.")
 
 class_names = load_class_names()
+translations = load_translations()
 
 if class_names:
     model, device = load_model(len(class_names))
@@ -81,15 +95,10 @@ if class_names:
         # But per plan, just file uploader.
 
         if uploaded_file is not None:
-            col1, col2 = st.columns(2)
+            image = Image.open(uploaded_file).convert('RGB')
+            st.image(image, caption='Imagen cargada', width="stretch")
             
-            with col1:
-                image = Image.open(uploaded_file).convert('RGB')
-                st.image(image, caption='Imagen cargada', width="stretch")
-
-            with col2:
-                st.write("Procesando...")
-                
+            with st.spinner('Analizando imagen...'):
                 input_tensor = process_image(image).to(device)
                 
                 with torch.no_grad():
@@ -103,11 +112,19 @@ if class_names:
                 for i in range(3):
                     prob = top3_prob[i].item()
                     idx = top3_idx[i].item()
-                    breed = class_names[idx]
+                    breed_key = class_names[idx]
                     
-                    st.markdown(f"**{i+1}. {breed}**")
+                    # Get translated name, fallback to original if not found
+                    breed_name = translations.get(breed_key, breed_key.replace("_", " "))
+                    
+                    st.markdown(f"""
+                    <div class="prediction-card">
+                        <span class="breed-name">{i+1}. {breed_name}</span>
+                        <br>
+                        <small>Confianza: {prob*100:.2f}%</small>
+                    </div>
+                    """, unsafe_allow_html=True)
                     st.progress(prob)
-                    st.write(f"Confidence: {prob*100:.2f}%")
 
     else:
         st.warning("Model could not be loaded. Please check the file paths.")

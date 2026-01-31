@@ -1,0 +1,50 @@
+/* Main container style */
+.stApp {
+    background: linear-gradient(100deg, #fbffed 0%, #ffffff 100%);
+    font-family: 'Inter', sans-serif;
+}
+
+/* Title style */
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    font-weight: 800;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Subheader/text style */
+.stMarkdown p {
+    font-size: 1.1rem;
+    color: #34495e;
+    line-height: 1.6;
+}
+
+/* Prediction card style */
+div[data-testid="stMetricValue"] {
+    font-family: 'Roboto Mono', monospace;
+}
+
+/* Spinner style customization (if possible via simple css, though streamlit controls this mostly) */
+/* We can style the container around it */
+
+/* Custom class for prediction result container */
+.prediction-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    border: 1px solid #e1e8ed;
+}
+
+.breed-name {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2980b9;
+}
+
+/* Progress bar alignment */
+.stProgress>div>div>div>div {
+    background-image: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+}
