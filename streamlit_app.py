@@ -10,7 +10,7 @@ import numpy as np
 import streamlit.components.v1 as components
 
 # --- Configuration ---
-MODEL_PATH = "model/modelo_perros.pth"
+MODEL_PATH = "model/modelo_perros_pytorch.pth"
 TF_MODEL_PATH = "model/modelo_prediccion_perros_v1.keras"
 CLASS_NAMES_PATH = "model/class_names.json"
 TRANSLATIONS_PATH = "model/breed_translations.json"
