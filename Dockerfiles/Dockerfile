@@ -1,10 +1,6 @@
-FROM tensorflow/tensorflow:2.19.0-gpu-jupyter
+FROM pytorch/pytorch:2.10.0-cuda13.0-cudnn9-runtime
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install tensorflow[and-cuda]==2.19.0
-RUN pip install --no-cache-dir -r requirements.txt
-# Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-# Set the entrypoint
-ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
+COPY . .
+ENTRYPOINT ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.runOnSave=true", "--server.fileWatcherType=poll"]
