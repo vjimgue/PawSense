@@ -5,9 +5,12 @@ from torchvision import models, transforms
 from PIL import Image
 import json
 import os
+import tensorflow as tf
+import numpy as np
 
 # --- Configuration ---
 MODEL_PATH = "model/modelo_perros.pth"
+TF_MODEL_PATH = "model/modelo_prediccion_perros_v1.keras"
 CLASS_NAMES_PATH = "model/class_names.json"
 TRANSLATIONS_PATH = "model/breed_translations.json"
 
@@ -66,7 +69,21 @@ def load_model(num_classes):
 
     model.to(device)
     model.eval()
+    model.to(device)
+    model.eval()
     return model, device
+
+@st.cache_resource
+def load_tf_model():
+    if not os.path.exists(TF_MODEL_PATH):
+        st.error(f"TF Model file not found: {TF_MODEL_PATH}")
+        return None
+    try:
+        model = tf.keras.models.load_model(TF_MODEL_PATH)
+        return model
+    except Exception as e:
+        st.error(f"Error loading TF model: {e}")
+        return None
 
 def process_image(image):
     # Standard transformers for EfficientNet
@@ -76,6 +93,14 @@ def process_image(image):
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
     return transform(image).unsqueeze(0) # Add batch dimension
+
+def process_image_tf(image):
+    # Resize to 224x224 matches the PyTorch flow, assuming TF model was trained similarly
+    # If using MobileNet or EfficientNet in TF, usually expects 224x224
+    img = image.resize((224, 224))
+    img_array = tf.keras.preprocessing.image.img_to_array(img)
+    img_array = tf.expand_dims(img_array, 0) # Create batch axis
+    return img_array
 
 # --- Main UI ---
 st.title("🐶 PawSense")
@@ -87,8 +112,9 @@ translations = load_translations()
 
 if class_names:
     model, device = load_model(len(class_names))
+    tf_model = load_tf_model()
 
-    if model:
+    if model and tf_model:
         uploaded_file = st.file_uploader("Elige una imagen de un perro...", type=["jpg", "jpeg", "png"])
         
         # Check if the user wants to use a default image for testing (optional, not requested but good for quick check)
@@ -98,33 +124,88 @@ if class_names:
             image = Image.open(uploaded_file).convert('RGB')
             st.image(image, caption='Imagen cargada', width="stretch")
             
+            
             with st.spinner('Analizando imagen...'):
-                input_tensor = process_image(image).to(device)
+                st.balloons()
                 
-                with torch.no_grad():
-                    outputs = model(input_tensor)
-                    probabilities = torch.nn.functional.softmax(outputs, dim=1)[0]
+                col1, col2 = st.columns(2)
                 
-                # Get top 3 predictions
-                top3_prob, top3_idx = torch.topk(probabilities, 3)
-                
-                st.subheader("Predicciones:")
-                for i in range(3):
-                    prob = top3_prob[i].item()
-                    idx = top3_idx[i].item()
-                    breed_key = class_names[idx]
+                # --- PyTorch Prediction ---
+                with col1:
+                    st.header("PyTorch")
+                    input_tensor = process_image(image).to(device)
                     
-                    # Get translated name, fallback to original if not found
-                    breed_name = translations.get(breed_key, breed_key.replace("_", " "))
+                    with torch.no_grad():
+                        outputs = model(input_tensor)
+                        probabilities = torch.nn.functional.softmax(outputs, dim=1)[0]
                     
-                    st.markdown(f"""
-                    <div class="prediction-card">
-                        <span class="breed-name">{i+1}. {breed_name}</span>
-                        <br>
-                        <small>Confianza: {prob*100:.2f}%</small>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    st.progress(prob)
+                    top3_prob, top3_idx = torch.topk(probabilities, 3)
+                    
+                    # Winner logic PyTorch
+                    winner_idx = top3_idx[0].item()
+                    winner_key = class_names[winner_idx]
+                    winner_name = translations.get(winner_key, winner_key.replace("_", " "))
+                    
+                    st.markdown(f'<p class="winner-banner" style="font-size: 1.5rem;">{winner_name}</p>', unsafe_allow_html=True)
+
+                    st.subheader("Resultados:")
+                    for i in range(3):
+                        prob = top3_prob[i].item()
+                        idx = top3_idx[i].item()
+                        breed_key = class_names[idx]
+                        breed_name = translations.get(breed_key, breed_key.replace("_", " "))
+                        
+                        card_class = "prediction-card winner-card" if i == 0 else "prediction-card"
+                        emoji = "🏆 " if i == 0 else ""
+                        
+                        st.markdown(f"""
+                        <div class="{card_class}">
+                            <span class="breed-name">{emoji}{i+1}. {breed_name}</span>
+                            <br>
+                            <small>Confianza: {prob*100:.2f}%</small>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        st.progress(prob)
+
+                # --- TensorFlow Prediction ---
+                with col2:
+                    st.header("TensorFlow")
+                    input_tensor_tf = process_image_tf(image)
+                    
+                    predictions_tf = tf_model.predict(input_tensor_tf)
+                    
+                    # Model output is already softmax (probabilities)
+                    probabilities_tf = predictions_tf[0]
+                    
+                    # Get top 3
+                    top3_idx_tf = probabilities_tf.argsort()[-3:][::-1]
+                    top3_prob_tf = probabilities_tf[top3_idx_tf]
+                    
+                    # Winner logic TF
+                    winner_idx_tf = top3_idx_tf[0]
+                    winner_key_tf = class_names[winner_idx_tf]
+                    winner_name_tf = translations.get(winner_key_tf, winner_key_tf.replace("_", " "))
+                    
+                    st.markdown(f'<p class="winner-banner" style="font-size: 1.5rem;">{winner_name_tf}</p>', unsafe_allow_html=True)
+
+                    st.subheader("Resultados:")
+                    for i in range(3):
+                        prob = float(top3_prob_tf[i])
+                        idx = top3_idx_tf[i]
+                        breed_key = class_names[idx]
+                        breed_name = translations.get(breed_key, breed_key.replace("_", " "))
+                        
+                        card_class = "prediction-card winner-card" if i == 0 else "prediction-card"
+                        emoji = "🏆 " if i == 0 else ""
+                        
+                        st.markdown(f"""
+                        <div class="{card_class}">
+                            <span class="breed-name">{emoji}{i+1}. {breed_name}</span>
+                            <br>
+                            <small>Confianza: {prob*100:.2f}%</small>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        st.progress(prob)
 
     else:
         st.warning("Model could not be loaded. Please check the file paths.")
