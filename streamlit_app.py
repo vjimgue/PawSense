@@ -34,9 +34,32 @@ def load_translations():
     with open(TRANSLATIONS_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
+import base64
+
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+@st.cache_data
+def get_img_as_base64(file):
+    with open(file, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def set_background(png_file):
+    bin_str = get_img_as_base64(png_file)
+    page_bg_img = f"""
+    <style>
+    .stApp {{
+        background-image: url("data:image/png;base64,{bin_str}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }}
+    </style>
+    """
+    st.markdown(page_bg_img, unsafe_allow_html=True)
 
 @st.cache_resource
 def load_model(num_classes):
@@ -105,6 +128,7 @@ def process_image_tf(image):
 
 # --- Main UI ---
 st.title("🐶 PawSense")
+set_background("assets/background.png")
 local_css("assets/style.css")
 st.write("Sube tu imagen de un perro y descubre su raza con nuestro clasificador.")
 
