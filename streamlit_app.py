@@ -7,6 +7,7 @@ import json
 import os
 import tensorflow as tf
 import numpy as np
+import streamlit.components.v1 as components
 
 # --- Configuration ---
 MODEL_PATH = "model/modelo_perros.pth"
@@ -14,7 +15,7 @@ TF_MODEL_PATH = "model/modelo_prediccion_perros_v1.keras"
 CLASS_NAMES_PATH = "model/class_names.json"
 TRANSLATIONS_PATH = "model/breed_translations.json"
 
-st.set_page_config(page_title="PawSenses", page_icon="🐶")
+st.set_page_config(page_title="PawSenses", page_icon="🐶", initial_sidebar_state="collapsed")
 
 # --- Utils ---
 @st.cache_resource
@@ -110,6 +111,10 @@ st.write("Sube tu imagen de un perro y descubre su raza con nuestro clasificador
 class_names = load_class_names()
 translations = load_translations()
 
+# Sidebar Config
+st.sidebar.header("⚙️ Configuración")
+popup_duration = st.sidebar.slider("Tiempo del Popup (s)", 3, 10, 5)
+
 if class_names:
     model, device = load_model(len(class_names))
     tf_model = load_tf_model()
@@ -126,28 +131,118 @@ if class_names:
             
             
             with st.spinner('Analizando imagen...'):
+                # --- Inference PyTorch ---
+                input_tensor = process_image(image).to(device)
+                with torch.no_grad():
+                    outputs = model(input_tensor)
+                    probabilities = torch.nn.functional.softmax(outputs, dim=1)[0]
+                
+                top3_prob, top3_idx = torch.topk(probabilities, 3)
+                
+                pytorch_winner_idx = top3_idx[0].item()
+                pytorch_winner_prob = top3_prob[0].item()
+                pytorch_winner_key = class_names[pytorch_winner_idx]
+                
+                # --- Inference TensorFlow ---
+                input_tensor_tf = process_image_tf(image)
+                predictions_tf = tf_model.predict(input_tensor_tf)
+                probabilities_tf = predictions_tf[0]
+                
+                top3_idx_tf = probabilities_tf.argsort()[-3:][::-1]
+                top3_prob_tf = probabilities_tf[top3_idx_tf]
+                
+                tf_winner_idx = top3_idx_tf[0]
+                tf_winner_prob = float(top3_prob_tf[0])
+                tf_winner_key = class_names[tf_winner_idx]
+
+                # --- Determine Grand Winner ---
+                if pytorch_winner_prob > tf_winner_prob:
+                    grand_winner_key = pytorch_winner_key
+                    grand_winner_prob = pytorch_winner_prob
+                    grand_winner_source = "PyTorch"
+                else:
+                    grand_winner_key = tf_winner_key
+                    grand_winner_prob = tf_winner_prob
+                    grand_winner_source = "TensorFlow"
+
+                grand_winner_name = translations.get(grand_winner_key, grand_winner_key.replace("_", " "))
+                
                 st.balloons()
                 
+                
+                # Custom Centered Popup with Close Button and Timer
+                # Using a unique ID 'grand-winner-popup' to target with JS
+                # Note: We remove inline onclick as it might be stripped. We use a separate component to inject logic.
+                popup_html = f"""
+                <div id="grand-winner-popup" class="grand-winner-popup">
+                    <span id="popup-close-btn" class="popup-close-btn">&times;</span>
+                    <h1 style="color: #e67e22; margin-bottom: 10px;">🎉 ¡TENEMOS UN GANADOR! 🎉</h1>
+                    <h2 style="color: #2c3e50; font-size: 2.5rem; margin: 10px 0;">{grand_winner_name}</h2>
+                    <p style="color: #7f8c8d; font-size: 1.2rem;">Confianza: <strong>{grand_winner_prob*100:.2f}%</strong></p>
+                    <p style="color: #95a5a6; font-size: 0.9rem;">(Detectado por {grand_winner_source})</p>
+                    <div class="popup-progress-container">
+                        <div id="popup-progress-bar" class="popup-progress-bar"></div>
+                    </div>
+                </div>
+                """
+                st.markdown(popup_html, unsafe_allow_html=True)
+                
+                # Inject JS via iframe to ensure execution and access to parent DOM
+                js_code = f"""
+                <script>
+                    const duration = {popup_duration};
+                    const popupId = 'grand-winner-popup';
+                    const btnId = 'popup-close-btn';
+                    const progressId = 'popup-progress-bar';
+                    
+                    // Access parent document
+                    const doc = window.parent.document;
+                    
+                    const popup = doc.getElementById(popupId);
+                    const btn = doc.getElementById(btnId);
+                    const progressBar = doc.getElementById(progressId);
+                    
+                    // Close button handler
+                    if (btn) {{
+                        btn.onclick = function() {{
+                            if (popup) popup.style.display = 'none';
+                        }};
+                    }}
+                    
+                    // Animation logic
+                    if (popup && progressBar) {{
+                        // Set transition duration to match popup duration
+                        progressBar.style.transition = `width ${{duration}}s linear`;
+                        
+                        // Force reflow to ensure transition works
+                        void progressBar.offsetWidth; 
+                        
+                        // Start animation
+                        setTimeout(() => {{
+                            progressBar.style.width = '0%';
+                        }}, 100);
+                        
+                        // Fade out trigger AFTER progress bar finishes
+                        setTimeout(() => {{
+                            popup.classList.add('fade-out');
+                        }}, duration * 1000);
+                        
+                        // Remove element after fade out (duration + 0.5s for existing CSS transition)
+                        setTimeout(() => {{
+                            popup.style.display = 'none';
+                        }}, (duration + 0.5) * 1000);
+                    }}
+                </script>
+                """
+                components.html(js_code, height=0, width=0)
+
                 col1, col2 = st.columns(2)
                 
-                # --- PyTorch Prediction ---
+                # --- Display PyTorch ---
                 with col1:
                     st.header("PyTorch")
-                    input_tensor = process_image(image).to(device)
+                    winner_name = translations.get(pytorch_winner_key, pytorch_winner_key.replace("_", " "))
                     
-                    with torch.no_grad():
-                        outputs = model(input_tensor)
-                        probabilities = torch.nn.functional.softmax(outputs, dim=1)[0]
-                    
-                    top3_prob, top3_idx = torch.topk(probabilities, 3)
-                    
-                    # Winner logic PyTorch
-                    winner_idx = top3_idx[0].item()
-                    winner_key = class_names[winner_idx]
-                    winner_name = translations.get(winner_key, winner_key.replace("_", " "))
-                    
-                    st.markdown(f'<p class="winner-banner" style="font-size: 1.5rem;">{winner_name}</p>', unsafe_allow_html=True)
-
                     st.subheader("Resultados:")
                     for i in range(3):
                         prob = top3_prob[i].item()
@@ -156,7 +251,7 @@ if class_names:
                         breed_name = translations.get(breed_key, breed_key.replace("_", " "))
                         
                         card_class = "prediction-card winner-card" if i == 0 else "prediction-card"
-                        emoji = "🏆 " if i == 0 else ""
+                        emoji = "🥇 " if i == 0 else ""
                         
                         st.markdown(f"""
                         <div class="{card_class}">
@@ -167,26 +262,10 @@ if class_names:
                         """, unsafe_allow_html=True)
                         st.progress(prob)
 
-                # --- TensorFlow Prediction ---
+                # --- Display TensorFlow ---
                 with col2:
                     st.header("TensorFlow")
-                    input_tensor_tf = process_image_tf(image)
-                    
-                    predictions_tf = tf_model.predict(input_tensor_tf)
-                    
-                    # Model output is already softmax (probabilities)
-                    probabilities_tf = predictions_tf[0]
-                    
-                    # Get top 3
-                    top3_idx_tf = probabilities_tf.argsort()[-3:][::-1]
-                    top3_prob_tf = probabilities_tf[top3_idx_tf]
-                    
-                    # Winner logic TF
-                    winner_idx_tf = top3_idx_tf[0]
-                    winner_key_tf = class_names[winner_idx_tf]
-                    winner_name_tf = translations.get(winner_key_tf, winner_key_tf.replace("_", " "))
-                    
-                    st.markdown(f'<p class="winner-banner" style="font-size: 1.5rem;">{winner_name_tf}</p>', unsafe_allow_html=True)
+                    winner_name_tf = translations.get(tf_winner_key, tf_winner_key.replace("_", " "))
 
                     st.subheader("Resultados:")
                     for i in range(3):
@@ -196,7 +275,7 @@ if class_names:
                         breed_name = translations.get(breed_key, breed_key.replace("_", " "))
                         
                         card_class = "prediction-card winner-card" if i == 0 else "prediction-card"
-                        emoji = "🏆 " if i == 0 else ""
+                        emoji = "🥇 " if i == 0 else ""
                         
                         st.markdown(f"""
                         <div class="{card_class}">

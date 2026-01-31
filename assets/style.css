@@ -41,8 +41,31 @@ div[data-testid="stMetricValue"] {
 .winner-card {
     background: linear-gradient(135deg, #fff 0%, #f0f9ff 100%);
     border: 2px solid #4facfe;
-    transform: scale(1.02);
+    transform: scale(1.05);
     box-shadow: 0 8px 15px rgba(79, 172, 254, 0.2);
+}
+
+.popup-progress-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background-color: #f0f0f0;
+    border-radius: 0 0 20px 20px;
+    overflow: hidden;
+}
+
+.popup-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #f1c40f, #e67e22);
+    width: 100%;
+    transition: width linear;
+}
+
+.fade-out {
+    opacity: 0 !important;
+    transition: opacity 0.5s ease-out;
 }
 
 .winner-banner {
@@ -64,6 +87,56 @@ div[data-testid="stMetricValue"] {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Custom Centered Overlay Popup */
+.grand-winner-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    text-align: center;
+    border: 3px solid #f1c40f;
+    animation: popupFadeIn 0.8s ease-out;
+    max-width: 80%;
+    width: 400px;
+}
+
+.popup-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.popup-close-btn:hover {
+    color: #e74c3c;
+}
+
+@keyframes popupFadeIn {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+
+    80% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1.0);
+        opacity: 1;
     }
 }
 
