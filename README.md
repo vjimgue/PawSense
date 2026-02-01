@@ -29,5 +29,6 @@ En caso de usar el cuderno con PyTorch, crear un entorno virtual de python con l
 Enlace a la aplicación en vivo: <https://pawsense.streamlit.app/> 
 
 Si bien en esta rama se encuentra todo el codigo de la aplicación, se ha creado una rama aparte dedicada a streamlit con tal de evitar conflictos a la hora de hacer el deployment con un requirements.txt especifico para la aplicación de streamlit.
+
 <img src="Images/CapturaWeb.gif" width=700>
 
