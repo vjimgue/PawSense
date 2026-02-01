@@ -1,0 +1,180 @@
+/* Main container style */
+.stApp {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Title style */
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    font-weight: 800;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Subheader/text style */
+.stMarkdown p {
+    font-size: 1.1rem;
+    color: #34495e;
+    line-height: 1.6;
+}
+
+/* Prediction card style */
+div[data-testid="stMetricValue"] {
+    font-family: 'Roboto Mono', monospace;
+}
+
+/* Spinner style customization (if possible via simple css, though streamlit controls this mostly) */
+/* We can style the container around it */
+
+/* Custom class for prediction result container */
+.prediction-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    border: 1px solid #e1e8ed;
+}
+
+.winner-card {
+    background: linear-gradient(135deg, #fff 0%, #f0f9ff 100%);
+    border: 2px solid #4facfe;
+    transform: scale(1.05);
+    box-shadow: 0 8px 15px rgba(79, 172, 254, 0.2);
+}
+
+.popup-progress-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background-color: #f0f0f0;
+    border-radius: 0 0 20px 20px;
+    overflow: hidden;
+}
+
+.popup-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #f1c40f, #e67e22);
+    width: 100%;
+    transition: width linear;
+}
+
+.fade-out {
+    opacity: 0 !important;
+    transition: opacity 0.5s ease-out;
+}
+
+.winner-banner {
+    font-size: 2.5rem;
+    color: #e67e22;
+    text-align: center;
+    font-weight: 900;
+    margin: 20px 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 1s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Custom Centered Overlay Popup */
+.grand-winner-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    text-align: center;
+    border: 3px solid #f1c40f;
+    animation: popupFadeIn 0.8s ease-out;
+    max-width: 90%;
+    width: 700px;
+}
+
+.popup-columns {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    margin-top: 20px;
+    gap: 20px;
+}
+
+.popup-col {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    background: #fdfdfd;
+    border-radius: 10px;
+    border: 1px solid #eee;
+}
+
+.popup-col h3 {
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 1.2rem;
+}
+
+.popup-col p {
+    color: #7f8c8d;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.popup-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.popup-close-btn:hover {
+    color: #e74c3c;
+}
+
+@keyframes popupFadeIn {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+
+    80% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1.0);
+        opacity: 1;
+    }
+}
+
+.breed-name {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2980b9;
+}
+
+/* Progress bar alignment */
+.stProgress>div>div>div>div {
+    background-image: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+}
